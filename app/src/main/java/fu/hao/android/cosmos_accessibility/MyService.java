@@ -6,6 +6,7 @@ import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.View;
@@ -16,13 +17,18 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 public class MyService extends AccessibilityService {
     private static final String TAG = "MyAccessibility";
@@ -84,8 +90,26 @@ public class MyService extends AccessibilityService {
             Element rootElement = doc.createElement("hierarchy");
             doc.appendChild(rootElement);
             checkNodeInfo(rootNode, doc, rootElement);
-        } catch (ParserConfigurationException pce){
 
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource source = new DOMSource(doc);
+            // FIXME Correct the path
+            StreamResult result = new StreamResult(
+                    new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
+                            "/COSMOS/" + "test.xml"));
+
+            // Output to console for testing
+            StreamResult outResult = new StreamResult(System.out);
+
+            transformer.transform(source, result);
+
+            System.out.println("File saved!");
+        } catch (ParserConfigurationException pce){
+            pce.printStackTrace();
+        } catch (TransformerException tfe) {
+            tfe.printStackTrace();
         }
     }
 
@@ -99,33 +123,28 @@ public class MyService extends AccessibilityService {
             Element childElement = doc.createElement("node");
             element.appendChild(childElement);
 
-            setAttribute(doc, childElement, "id", getNodeId(childNode));
-            setAttribute(doc, childElement, "class", childNode.getClassName().toString());
-            //setAttribute(doc, childElement, "bounds", childNode.getBoundsInScreen());
-            setAttribute(doc, childElement, "selected", childNode.isSelected() ? "true" : "false");
-            setAttribute(doc, childElement, "password", childNode.isPassword() ? "true" : "false");
-            setAttribute(doc, childElement, "long-clickable", childNode.isLongClickable() ? "true" : "false");
-            setAttribute(doc, childElement, "scrollable", childNode.isScrollable() ? "true" : "false");
-            setAttribute(doc, childElement, "focused", childNode.isFocused() ? "true" : "false");
-            setAttribute(doc, childElement, "focusable", childNode.isFocusable() ? "true" : "false");
-            setAttribute(doc, childElement, "enabled", childNode.isEnabled() ? "true" : "false");
-            setAttribute(doc, childElement, "clickable", childNode.isClickable() ? "true" : "false");
-            setAttribute(doc, childElement, "checked", childNode.isChecked() ? "true" : "false");
-            setAttribute(doc, childElement, "checkable", childNode.isClickable() ? "true" : "false");
-            setAttribute(doc, childElement, "content-desc", childNode.getContentDescription().toString());
-            setAttribute(doc, childElement, "package", childNode.getPackageName().toString());
-            setAttribute(doc, childElement, "text", childNode.getText().toString());
-            setAttribute(doc, childElement, "index", Integer.toString(i));
+            childElement.setAttribute("id", getNodeId(childNode));
+            childElement.setAttribute("class", childNode.getClassName().toString());
+            //childElement.setAttribute("bounds", childNode.getBoundsInScreen());
+            childElement.setAttribute("selected", childNode.isSelected() ? "true" : "false");
+            childElement.setAttribute("password", childNode.isPassword() ? "true" : "false");
+            childElement.setAttribute("long-clickable", childNode.isLongClickable() ? "true" : "false");
+            childElement.setAttribute("scrollable", childNode.isScrollable() ? "true" : "false");
+            childElement.setAttribute("focused", childNode.isFocused() ? "true" : "false");
+            childElement.setAttribute("focusable", childNode.isFocusable() ? "true" : "false");
+            childElement.setAttribute("enabled", childNode.isEnabled() ? "true" : "false");
+            childElement.setAttribute("clickable", childNode.isClickable() ? "true" : "false");
+            childElement.setAttribute("checked", childNode.isChecked() ? "true" : "false");
+            childElement.setAttribute("checkable", childNode.isClickable() ? "true" : "false");
+            childElement.setAttribute("content-desc", childNode.getContentDescription().toString());
+            childElement.setAttribute("package", childNode.getPackageName().toString());
+            childElement.setAttribute("text", childNode.getText().toString());
+            childElement.setAttribute("index", Integer.toString(i));
 
             checkNodeInfo(childNode, doc, childElement);
         }
     }
 
-    private void setAttribute(Document doc, Element element, String attrName, String attrValue) {
-        Attr attr = doc.createAttribute(attrName);
-        attr.setValue(attrValue);
-        element.setAttributeNode(attr);
-    }
 
         @Override
     public void onInterrupt() {
