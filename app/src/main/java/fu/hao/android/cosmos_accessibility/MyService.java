@@ -3,17 +3,12 @@ package fu.hao.android.cosmos_accessibility;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.annotation.TargetApi;
-import android.app.Service;
-import android.content.Intent;
 import android.os.Build;
 import android.os.Environment;
-import android.os.IBinder;
 import android.util.Log;
-import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -89,6 +84,7 @@ public class MyService extends AccessibilityService {
             Document doc = docBuilder.newDocument();
             Element rootElement = doc.createElement("hierarchy");
             doc.appendChild(rootElement);
+
             checkNodeInfo(rootNode, doc, rootElement);
 
             // write the content into xml file
@@ -101,7 +97,7 @@ public class MyService extends AccessibilityService {
                             "/COSMOS/" + "test.xml"));
 
             // Output to console for testing
-            StreamResult outResult = new StreamResult(System.out);
+            // StreamResult result = new StreamResult(System.out);
 
             transformer.transform(source, result);
 
