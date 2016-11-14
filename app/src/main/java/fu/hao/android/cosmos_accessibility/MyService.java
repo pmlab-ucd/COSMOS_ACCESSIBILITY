@@ -3,6 +3,9 @@ package fu.hao.android.cosmos_accessibility;
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.annotation.TargetApi;
+import android.content.ComponentName;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
@@ -34,7 +37,7 @@ public class MyService extends AccessibilityService {
         AccessibilityServiceInfo accessibilityServiceInfo = new AccessibilityServiceInfo();
         // accessibilityServiceInfo.packageNames = PACKAGES;
         accessibilityServiceInfo.eventTypes = AccessibilityEvent.TYPE_VIEW_CLICKED |
-                AccessibilityEvent.TYPE_VIEW_FOCUSED;
+                AccessibilityEvent.TYPE_VIEW_FOCUSED | AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED;
         accessibilityServiceInfo.feedbackType = AccessibilityServiceInfo.FEEDBACK_SPOKEN;
         accessibilityServiceInfo.notificationTimeout = 100;
         accessibilityServiceInfo.flags = AccessibilityServiceInfo.DEFAULT |
@@ -69,12 +72,29 @@ public class MyService extends AccessibilityService {
         // TODO Change to check event only if new window is created
         int eventType = event.getEventType();
         String eventText = "";
-        Log.i(TAG, "==============Start====================");
+        Log.i(TAG, "UI event detected!");
+
+        if (eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            if (event.getPackageName() != null && event.getClassName() != null) {
+                ComponentName componentName = new ComponentName(
+                        event.getPackageName().toString(),
+                        event.getClassName().toString()
+                );
+
+                ActivityInfo activityInfo = tryGetActivity(componentName);
+                boolean isActivity = activityInfo != null;
+                if (isActivity) {
+                    Log.i("CurrentActivity", componentName.flattenToShortString());
+                }
+            }
+        }
+
         AccessibilityNodeInfo nodeInfo = event.getSource();
         if (nodeInfo == null) {
             return;
         }
 
+        Log.i(TAG, "Examine current page...");
         AccessibilityNodeInfo rootNode = getRootInActiveWindow();
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -92,16 +112,14 @@ public class MyService extends AccessibilityService {
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(doc);
             // FIXME Correct the path
-            StreamResult result = new StreamResult(
-                    new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
-                            "/COSMOS/" + "test.xml"));
+            //StreamResult result = new StreamResult(
+                    //new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
+                           // "/COSMOS/" + "test.xml"));
 
             // Output to console for testing
-            // StreamResult result = new StreamResult(System.out);
+            StreamResult result = new StreamResult(System.out);
 
             transformer.transform(source, result);
-
-            System.out.println("File saved!");
         } catch (ParserConfigurationException pce){
             pce.printStackTrace();
         } catch (TransformerException tfe) {
@@ -109,6 +127,15 @@ public class MyService extends AccessibilityService {
         }
     }
 
+    private ActivityInfo tryGetActivity(ComponentName componentName) {
+        try {
+            return getPackageManager().getActivityInfo(componentName, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            return null;
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.KITKAT)
     private void checkNodeInfo(AccessibilityNodeInfo nodeInfo, Document doc, Element element) {
         if (nodeInfo == null) {
             return;
@@ -116,10 +143,16 @@ public class MyService extends AccessibilityService {
 
         for (int i = 0; i < nodeInfo.getChildCount(); i++) {
             AccessibilityNodeInfo childNode = nodeInfo.getChild(i);
+
+            if (childNode == null) {
+                continue;
+            }
+
             Element childElement = doc.createElement("node");
             element.appendChild(childElement);
 
-            childElement.setAttribute("id", getNodeId(childNode));
+            childElement.setAttribute("id", childNode.getViewIdResourceName() == null ?
+                    "" : childNode.getViewIdResourceName());//getNodeId(childNode));
             childElement.setAttribute("class", childNode.getClassName().toString());
             //childElement.setAttribute("bounds", childNode.getBoundsInScreen());
             childElement.setAttribute("selected", childNode.isSelected() ? "true" : "false");
@@ -132,9 +165,11 @@ public class MyService extends AccessibilityService {
             childElement.setAttribute("clickable", childNode.isClickable() ? "true" : "false");
             childElement.setAttribute("checked", childNode.isChecked() ? "true" : "false");
             childElement.setAttribute("checkable", childNode.isClickable() ? "true" : "false");
-            childElement.setAttribute("content-desc", childNode.getContentDescription().toString());
+            childElement.setAttribute("content-desc", childNode.getContentDescription() == null ?
+                    "" : childNode.getContentDescription().toString());
             childElement.setAttribute("package", childNode.getPackageName().toString());
-            childElement.setAttribute("text", childNode.getText().toString());
+            childElement.setAttribute("text", childNode.getText() == null ? "" :
+                    childNode.getText().toString());
             childElement.setAttribute("index", Integer.toString(i));
 
             checkNodeInfo(childNode, doc, childElement);
