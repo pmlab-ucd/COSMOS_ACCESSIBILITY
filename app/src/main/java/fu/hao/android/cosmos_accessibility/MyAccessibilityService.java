@@ -15,7 +15,6 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +27,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-public class MyService extends AccessibilityService {
+public class MyAccessibilityService extends android.accessibilityservice.AccessibilityService {
     private static final String TAG = "MyAccessibility";
 
     @Override
@@ -120,10 +119,8 @@ public class MyService extends AccessibilityService {
             StreamResult result = new StreamResult(System.out);
 
             transformer.transform(source, result);
-        } catch (ParserConfigurationException pce){
+        } catch (ParserConfigurationException | TransformerException pce){
             pce.printStackTrace();
-        } catch (TransformerException tfe) {
-            tfe.printStackTrace();
         }
     }
 
