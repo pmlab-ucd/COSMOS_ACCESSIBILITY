@@ -8,6 +8,7 @@ import android.os.IBinder;
 
 import java.io.OutputStream;
 
+@Deprecated
 public class TriggerService extends Service {
     public TriggerService() {
 

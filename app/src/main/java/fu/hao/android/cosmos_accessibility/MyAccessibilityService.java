@@ -148,8 +148,11 @@ public class MyAccessibilityService extends android.accessibilityservice.Accessi
             Element childElement = doc.createElement("node");
             element.appendChild(childElement);
 
-            childElement.setAttribute("id", childNode.getViewIdResourceName() == null ?
-                    "" : childNode.getViewIdResourceName());//getNodeId(childNode));
+            // Make sure we're running on JELLY_BEAN or higher to use getRid APIs
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN) {
+                childElement.setAttribute("id", childNode.getViewIdResourceName() == null ?
+                        "" : childNode.getViewIdResourceName());//getNodeId(childNode));
+            }
             childElement.setAttribute("class", childNode.getClassName().toString());
             //childElement.setAttribute("bounds", childNode.getBoundsInScreen());
             childElement.setAttribute("selected", childNode.isSelected() ? "true" : "false");
